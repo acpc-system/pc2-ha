@@ -1,0 +1,351 @@
+#!/bin/bash
+################################################################################################
+#### OCF heartbeat resource agent manages different operation for PC2Server ####################
+#### PC2 script must be copy to /usr/lib/ocf/resource.d/heartbeat/			      ##
+#### Thanks to https://clusterlabs.org/pacemaker/doc/2.1/Pacemaker_Administration/html/agents.html##
+#### Do not forget to make it executable						       #
+#### Parameters										       #
+####		OCF_RESKEY_binpath
+###		OCF_RESKEY_conffile
+###		OCF_RESKEY_pidfile
+###		OCF_RESKEY_extraargs
+###		OCF_RESKEY_workdir
+###		OCF_RESKEY_user
+################################################################################################
+
+: ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/lib/heartbeat}
+. ${OCF_FUNCTIONS_DIR}/ocf-shellfuncs
+
+OCF_RESKEY_binpath_default="/usr/local/pc2/bin/pc2server"
+OCF_RESKEY_conffile_default="/usr/local/pc2/pc2v9.ini"
+OCF_RESKEY_pidfile_default="/var/run/pc2server.pid"
+OCF_RESKEY_extraargs_default=""
+OCF_RESKEY_workdir_default="/pc2data"
+OCF_RESKEY_user_default="pc2"
+
+: ${OCF_RESKEY_binpath=${OCF_RESKEY_binpath_default}}
+: ${OCF_RESKEY_conffile=${OCF_RESKEY_conffile_default}}
+: ${OCF_RESKEY_pidfile=${OCF_RESKEY_pidfile_default}}
+: ${OCF_RESKEY_workdir=${OCF_RESKEY_workdir_default}}
+: ${OCF_RESKEY_user=${OCF_RESKEY_user_default}}
+
+LOGFILE="/tmp/pc2log"
+
+USAGE="usage ${0} {start|stop|status|monitor|validate-all|meta-data}"
+
+Usage()
+{
+	echo $USAGE >&2
+}
+
+get_pc2pidfile() {
+	PIDFILE=${OCF_RESKEY_pidfile}
+}
+
+get_pc2status() {
+	if [ -n ${PIDFILE} ] && [ -f ${PIDFILE} ] 
+	then
+		### The pc2 is running
+		PID=$(cat ${PIDFILE})
+		if [ -n ${PID} ]
+		then
+			PROC=$(ps -p ${PID} | grep pc2server|wc -l)
+			### There is a process for pc2server with that pid
+			if [ ${PROC} -eq 1 ]
+			then
+				ocf_log info "PC2 Server is running"
+				return ${OCF_SUCCESS}
+			else
+					### Means that the PC2 is not running, but the PID exists (Due to failure or manual kill)
+					ocf_log info "PC2 Server us not running, but the PID file exists"
+					return ${OCF_ERR_GENERIC}
+			fi
+			### PID file is empty
+			ocf_log info "PID file \"${PIDFILE}\" is empty, remove it manually"
+			return ${OCF_ERR_GENERIC}
+		fi
+	fi
+	### The pc2 is not running
+	ocf_log info "PC2 server is not running"
+	return ${OCF_NOT_RUNNING}
+}
+
+
+### Check for pc2 environment
+validate_pc2_all() {
+	## Check for java :-)
+	java -version > /dev/null 2>&1
+
+	if [ ${?} -ne 0 ]
+	then
+		### java is not installed in the system
+		ocf_log info "Java is not installed, can not start pc2 anyway"
+		return ${OCF_ERR_INSTALLED}
+	fi
+
+	## Check for binary variable
+	if [ ! -n ${OCF_RESKEY_binpath} ]
+	then
+		ocf_log info "Binary path is not specified"
+                return ${OCF_ERR_ARGS}
+	fi
+
+	## Check for ini file path
+
+	if [ ! -n ${OCF_RESKEY_conffile} ]
+	then
+		ocf_log info "Config file is not specified"
+		return ${OCF_ERR_ARGS}
+	fi
+
+	## Check for pc2 shell script
+	if [ ! -f ${OCF_RESKEY_binpath} ] 
+	then
+		### PC2 package is not installed
+		ocf_log info "PC2 package is not installed. Download, and extract it"
+		return ${OCF_ERR_INSTALLED}
+	fi
+	
+	# Check for pc2 shell script execution
+	if [ ! -x ${OCF_RESKEY_binpath} ] 
+        then
+                ### PC2 package is not installed
+                ocf_log info "PC2 server script is not executable"
+                return ${CF_ERR_PERM}
+        fi
+
+	## Check for pc2 ini file
+        if [ ! -f ${OCF_RESKEY_conffile} ]
+        then
+                ### PC2 ini is not found
+                ocf_log info "PC2 ini is not found"
+                return ${OCF_ERR_INSTALLED}
+        fi
+
+        # Check for pc2 ini file read permissions
+        if [ ! -r ${OCF_RESKEY_conffile} ]
+        then
+                ocf_log info "PC2 ini is  not readable"
+                return ${CF_ERR_PERM}
+        fi
+
+	##Check for workdir 
+	if [ ! -d ${OCF_RESKEY_workdir} ]
+	then
+		ocf_log info "work dir ${OCF_RESKEY_workdir} is not found"
+		return ${OCF_ERR_INSTALLED}
+	fi
+
+	## Check if user exists
+	id ${OCF_RESKEY_user} > /dev/null 2>&1
+	if [ ${?} -ne 0 ]
+	then
+		ocf_log info "user ${OCF_RESKEY_user} is not found"
+                return ${OCF_ERR_INSTALLED}
+	fi
+
+	### Check for workdir write permission
+	if sudo -u ${OCF_RESKEY_user} [ ! -w ${OCF_RESKEY_workdir} ]
+	then
+		ocf_log info "user ${OCF_RESKEY_user} has no write permission on ${OCF_RESKEY_workdir}"
+		return ${CF_ERR_PERM}
+	fi
+
+	## Every this seems to be good
+	return $OCF_SUCCESS
+}
+
+### Starts pc2 if not runing
+start_pc2() {
+get_pc2status
+STAT=${?}
+if [ ${STAT} -eq ${OCF_SUCCESS} ]
+then
+	exit ${OCF_SUCCESS}
+elif [ ${STAT} -ne ${OCF_NOT_RUNNING} ]
+then
+	ocf_log info "Unknow PC2 server status"
+	exit ${OCF_ERR_GENERIC}
+fi
+	#### /home/compiler/pc2-9.8build/bin/pc2server --login s1 --contestpassword contest --nogui --ini /home/compiler/pc2-9.8build/pc2v9.ini  > /tmp/res 2>&1 &
+	LOGFILE=$(date | sed 's/ /_/g')
+	PC2CMD="${OCF_RESKEY_binpath} ${OCF_RESKEY_extraargs} --ini ${OCF_RESKEY_conffile} > ${LOGFILE} 2>&1"
+	#cd ${OCF_RESKEY_workdir} ; sudo -u ${OCF_RESKEY_user} ${PC2CMD} &
+	cd ${OCF_RESKEY_workdir} && ${PC2CMD} &
+	###To verify it is running or no
+	L=$(ps -ef|grep pc2server|sed '$d'|wc -l)
+	if [ ${L} -eq 0 ]
+	then
+		ocf_log info "Error, PC2 server can not be started"
+		ocf_log info "$(cat ${LOGFILE})"
+		exit $OCF_ERR_GENERIC
+	fi
+	PID=$(pgrep pc2server)
+	case ${?} in
+		0)
+			ocf_log info "PID file (pid:${PID} at ${PIDFILE}) created for pc2server."
+                        ocf_log info "Started pc2server."
+                        echo ${PID} > ${PIDFILE}
+                        exit ${OCF_SUCCESS}
+			;;
+		1)
+			rm -f "${PIDFILE}" > /dev/null 2>&1
+                        ocf_log info "$Error getting pid."
+                        exit ${OCF_ERR_GENERIC}
+			;;
+		*)
+			rm -f "${PIDFILE}" > /dev/null 2>&1
+                        ocf_exit_reason "Error encountered detecting pid of pc2server."
+                        exit ${OCF_ERR_GENERIC}
+			;;
+	esac
+	####rm ${LOGFILE}
+}
+
+
+stop_pc2() {
+	get_pc2status
+	STAT=${?}
+	if [ ${STAT} -eq ${OCF_SUCCESS} ]
+	then
+		PID=$(cat ${PIDFILE})
+		### The file was exists and contains the PID
+		if [ -n "${PID}" ]
+		then
+			#### get all childs, kill them 1st
+			CPID=$(ps --ppid ${PID}| awk ' { print $1 } '| sed '1d')
+			kill ${CPID}
+			#### Kill the parent now
+			#kill ${PID}
+			rm ${PIDFILE} 2>/dev/null
+		fi
+	fi
+	ocf_log info "Stopped pc2server."
+        exit ${OCF_SUCCESS}
+}
+
+get_metadata() {
+cat <<END
+<?xml version="1.0"?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="pc2server">
+<version>1.0</version>
+<longdesc lang="en">
+This script manages pc2server
+</longdesc>
+<shortdesc lang="en">Manages an pc2server</shortdesc>
+
+<parameters>
+
+<parameter name="binpath">
+<longdesc lang="en">
+The pc2server binary path.
+For example, "/usr/local/pc2/bin/pc2server"
+</longdesc>
+<shortdesc lang="en">Full path to the pc2server binary</shortdesc>
+<content type="string" default="${OCF_RESKEY_binpath_default}"/>
+</parameter>
+
+<parameter name="conffile">
+<longdesc lang="en">
+The PC2 INI file name with full path.
+For example, "/usr/local/pc2/pc2v9.ini"
+</longdesc>
+<shortdesc lang="en">Configuration file name with full path</shortdesc>
+<content type="string" default="${OCF_RESKEY_conffile_default}" />
+</parameter>
+
+<parameter name="pidfile">
+<longdesc lang="en">
+The PC2Server pidfile with full path.
+For example, "/var/run/pc2server.pid"
+</longdesc>
+<shortdesc lang="en">PID file with full path</shortdesc>
+<content type="string" default="${OCF_RESKEY_pidfile_default}" />
+</parameter>
+
+<parameter name="extraargs">
+<longdesc lang="en">
+The PC2Server Extra arguments. 
+For example, "--login s1 --nogui"
+</longdesc>
+<shortdesc lang="en">List of arguments to be passed</shortdesc>
+<content type="string" default="${OCF_RESKEY_extraargs_default}" />
+</parameter>
+
+
+<parameter name="workdir">
+<longdesc lang="en">
+The PC2Server working directory
+For example, "/pc2data"
+</longdesc>
+<shortdesc lang="en">PC2Server working directory</shortdesc>
+<content type="string" default="${OCF_RESKEY_workdir_default}" />
+</parameter>
+
+<parameter name="user">
+<longdesc lang="en">
+The PC2Server user to run.
+For example, "pc2"
+</longdesc>
+<shortdesc lang="en">User used to start pc2server with</shortdesc>
+<content type="string" default="${OCF_RESKEY_user_default}" />
+</parameter>
+
+</parameters>
+
+<actions>
+<action name="start" timeout="20s"/>
+<action name="stop" timeout="20s"/>
+<action name="monitor" depth="0" timeout="20s" interval="60s" />
+<action name="validate-all" timeout="20s"/>
+<action name="meta-data"  timeout="5s"/>
+</actions>
+</resource-agent>
+END
+exit $OCF_SUCCESS
+}
+
+
+## CMD To stop
+#kill $(ps -ef|grep pc2|sed -n '2p'| awk ' { print $2 " " $3} ')
+
+## Check for parameters
+if [ ${#} -ne 1 ]
+then
+	Usage
+	exit $OCF_ERR_ARGS
+fi
+case ${1} in
+	start)
+		get_pc2pidfile
+		start_pc2
+		;;
+	stop)
+		get_pc2pidfile
+		stop_pc2
+		;;
+	status)
+		get_pc2pidfile
+		get_pc2status
+		;;
+	monitor)
+		get_pc2pidfile
+		get_pc2status
+		;;
+	validate-all)
+		validate_pc2_all
+		;;
+	meta-data)
+		get_metadata
+		;;
+	usage)
+		Usage
+		exit $OCF_SUCCESS
+		;;
+	*)
+		Usage
+		exit $OCF_ERR_UNIMPLEMENTED
+		;;
+esac
+
