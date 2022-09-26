@@ -18,7 +18,8 @@ On ansible controller:
   * sudo pip3 install j2cli
   * mkdir ansible
   * cd ansible
-  * git clone https://github.com/compilereg/k8scluster
+  * git clone https://github.com/compilereg/pc2-ha
+  * ansible-galaxy collection install community.general
 
 # Usage
 To setup PC2 cluster, 1st you have to set some parameters as hostnames, and IP addresses. 
