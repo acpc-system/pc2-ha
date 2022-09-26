@@ -6,6 +6,6 @@ pc2slave
 192.168.1.6
 drbds
 administrator
-baba123
-baba123
+sshpass
+sudopass
 enp0s3
