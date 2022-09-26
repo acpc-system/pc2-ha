@@ -1,0 +1,21 @@
+{{ MASTERNODENAME }} ansible_host={{ MASTERNODEIP }} node_hostname={{ MASTERNODENAME }}
+{%- for line in WORKERNODES %}
+{{ line.HOSTNAME }} ansible_host={{ line.IP }}  node_hostname={{ line.HOSTNAME }}
+{% endfor %}
+
+[clusteradmin]
+{{ MASTERNODENAME }}
+{{ MASTERSTORAGE }}
+
+[clusternodes]
+{%- for line in WORKERNODES %}
+{{ line.HOSTNAME }}
+{{ line.STORAGE -}}
+{% endfor %}
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+ansible_user={{ SSHUSER }}
+ansible_password={{ SSHPASS }}
+ansible_become_pass={{ BECOMEPASS }}
+mdns_if={{ MDNSIF }}
