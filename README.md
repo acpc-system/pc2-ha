@@ -45,3 +45,6 @@ Integer represents how any slaves
 <Administrator password>
 <sudo password>
 Then, repeate the worker nodehostname, and IP for your desired number of worker nodes
+
+# Example
+View the file "testdata" as an example
