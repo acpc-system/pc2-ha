@@ -9,6 +9,7 @@ An ansible playbook to setup a full Active/Passive cluster with pacemaker and DR
   * 3 network cards (NICs) in each server.
   * Each network pair in the same subnet
   * The hostname for each server resolvs to the IP address used in HA-Cluster network.
+  * A second disk installed /dev/sdb to be used as the cluster storage in each server
 
 # Installation
 On ansible controller:
