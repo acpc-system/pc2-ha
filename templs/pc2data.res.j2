@@ -1,0 +1,20 @@
+resource "pc2data" {
+                        device minor 1;
+                        disk "/dev/pc2datavg/pc2datalv";
+                        meta-disk internal;
+
+                        on "{{ MASTERNODENAME }}" {
+                                Inode-id 0;
+                        }
+			{%- for line in WORKERNODES %}
+                        on "{{ line.HOSTNAME }}" {
+                                node-id {{ line.NODECOUNTER }};
+                        }
+			{% endfor %}
+                        connection {
+                                host "{{ MASTERNODENAME }}" address {{ MASTERSTORAGE }}:7789;
+				{%- for line in WORKERNODES %}
+                                host "{{ line.HOSTNAME }}" address {{ line.STORAGE }}:7789;
+				{% endfor %}
+                        }
+                }

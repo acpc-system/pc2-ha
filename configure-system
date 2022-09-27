@@ -100,7 +100,9 @@ function saveValues {
 	##Generate yaml file in /tmp
 	FILENAME=$( cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w ${1:-12} | head -n 1)
 	DATAFILE="/tmp/${FILENAME}.yaml"
+	DATARESFILE="/tmp/${FILENAME}-res.yaml"
 	TMPINVFILE="/tmp/$( cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w ${1:-12} | head -n 1)"
+	TMPRESFILE="${TMPINVFILE}-res"
 	if [ -f ${TMPINVFILE} ]
 	then
 		if [ ! -w  ${TMPINVFILE} ]
@@ -109,6 +111,14 @@ function saveValues {
 			exit 4
 		fi
 	fi
+	if [ -f ${TMPRESFILE} ]
+        then
+                if [ ! -w  ${TMPRESFILE} ]
+                then
+                        echo "Sorry, can not write to the file  ${TMPRESFILE}"
+                        exit 4
+                fi
+        fi
 cat <<EOT >> ${DATAFILE}
 MASTERNODENAME: ${MASTERNODEHOSTNAME}
 MASTERNODEIP: ${MASTERNODEIP}
@@ -119,11 +129,22 @@ BECOMEPASS: ${BECOMEPASS}
 MDNSIF: ${MDNSIF}
 WORKERNODES:
 EOT
+
+cat <<EOT >> ${DATARESFILE}
+MASTERNODENAME: ${MASTERNODEHOSTNAME}
+MASTERSTORAGE: ${MASTERSTORAGE}
+WORKERNODES:
+EOT
+	CO=1
 	for k in ${!WORKERSNODES[@]}
 	do
          echo " - HOSTNAME: ${k}" >> ${DATAFILE}
          echo "   IP: ${WORKERSNODES[$k]}" >> ${DATAFILE}
 	 echo "   STORAGE: ${WORKERSTORAGE[$k]}" >> ${DATAFILE}
+	 echo " - HOSTNAME: ${k}" >> ${DATARESFILE}
+	 echo "   NODECOUNTER: ${CO}" >> ${DATARESFILE}
+	 echo "   STORAGE: ${WORKERSTORAGE[$k]}" >> ${DATARESFILE}
+	 CO=$[CO+1]
    	done
 	echo "Generating ansible inventory file from template file templs/inventoryfile"
 	j2 templs/inventoryfile ${DATAFILE} > ${TMPINVFILE} 2> /dev/null
@@ -133,10 +154,21 @@ EOT
 		echo "j2 templs/inventoryfile ${DATAFILE} > ${TMPINVFILE}"
 		exit 5
 	fi
-
+	echo "Generating DRBD resource configuration file templs/pc2data.res.j2"
+        j2 templs/pc2data.res.j2 ${DATARESFILE} > ${TMPRESFILE} 2> /dev/null
+	if [ $? -ne 0 ]
+        then
+                echo "Can not generate PC2 data resoruce file ${TMPRESFILE}, run the following command for further investigation"
+                echo "j2 templs/inventoryfile ${DATARESFILE} > ${TMPRESFILE}"
+                exit 7
+        fi
 	if [ -f ${DATAFILE} ]
 	then
 			rm ${DATAFILE}
+	fi
+	if [ -f ${DATARESFILE} ]
+	then
+		rm ${DATARESFILE}
 	fi
 	echo "Downloading PC2 package from ${PC2PACKAGE}"
 ##Uncomment the next line in producation
@@ -145,9 +177,14 @@ EOT
 	echo "pc2file=${PC2FILENAME}" >> ${TMPINVFILE}
 	PC2RESOURCEFILENAME=$(basename "${PC2RESOURCEAGENT}")
 	#wget ${PC2RESOURCEAGENT}
-	echo "!! WARNING: Do not forget to download resource agent file ${PC2RESOURCEAGENT} and store it in directory files !!"
 	echo "resourceagent=${PC2RESOURCEFILENAME}" >> ${TMPINVFILE}
 	echo "The inventory file has been written to ${TMPINVFILE}"
+	echo "The pc2data resource file has been written to ${TMPRESFILE}"
+	echo "!! WARNING: Do not forget to download resource agent file ${PC2RESOURCEAGENT} and store it in directory files !!"
+	echo "Do not forget :"
+	echo -e "\t\t1- Copy ${TMPINVFILE} to hosts file : cp ${TMPINVFILE} ./hosts "
+	echo -e "\t\t2- Copy ${TMPRESFILE} to directory files : cp ${TMPRESFILE} ./files/pc2data.res "
+	echo -e "\t\t\tNote: The file name must be pc2data.res"
 }
 
 echo "Pacemaker Cluster manager setup parameters:"
