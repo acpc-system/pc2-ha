@@ -18,6 +18,7 @@ PC2RESOURCEAGENT='https://github.com/acpc-system/pc2-ha/blob/main/PC2'
 declare -A NEEDEDPACKAGES
 declare -A WORKERSNODES
 declare -A WORKERSTORAGE
+declare -A WORKERNODESTIP
 MASTERNODEHOSTNAME=""
 MASTERNODEIP=""
 SSHUSER=""
@@ -133,6 +134,7 @@ EOT
 cat <<EOT >> ${DATARESFILE}
 MASTERNODENAME: ${MASTERNODEHOSTNAME}
 MASTERSTORAGE: ${MASTERSTORAGE}
+MASTERSTORAGEIP: ${MASTERSTIP}
 WORKERNODES:
 EOT
 	CO=1
@@ -144,6 +146,7 @@ EOT
 	 echo " - HOSTNAME: ${k}" >> ${DATARESFILE}
 	 echo "   NODECOUNTER: ${CO}" >> ${DATARESFILE}
 	 echo "   STORAGE: ${WORKERSTORAGE[$k]}" >> ${DATARESFILE}
+	 echo "   STORAGEIP: ${WORKERNODESTIP[$k]}" >> ${DATARESFILE}
 	 CO=$[CO+1]
    	done
 	echo "Generating ansible inventory file from template file templs/inventoryfile"
@@ -159,7 +162,7 @@ EOT
 	if [ $? -ne 0 ]
         then
                 echo "Can not generate PC2 data resoruce file ${TMPRESFILE}, run the following command for further investigation"
-                echo "j2 templs/inventoryfile ${DATARESFILE} > ${TMPRESFILE}"
+                echo "j2 templs/pc2data.res.j2 ${DATARESFILE} > ${TMPRESFILE}"
                 exit 7
         fi
 	if [ -f ${DATAFILE} ]
@@ -216,6 +219,7 @@ fi
 MASTERNODEHOSTNAME=$(readInput "hostname" "Master node hostname")
 MASTERNODEIP=$(readInput "ipv4" "Master node IP address")
 MASTERSTORAGE=$(readInput "hostname" "Master node storage")
+MASTERSTIP=$(readInput "ipv4" "Master storage ip address")
 NOOFWORKERS=$(readInput "integer" "How many workers nodes")
 for i in $(seq 1 ${NOOFWORKERS})
 do
@@ -274,8 +278,10 @@ do
 	done
 	#################### Read the storage networks
         WORKERST=$(readInput "hostname" "Worker node ${i} storage")
+	WORKERNODESTORAGEIP=$(readInput "ipv4" "Worker node ${i} storage IP ")
 	WORKERSNODES[${WORKERNODENAME}]=${WORKERNODEIP}
 	WORKERSTORAGE[${WORKERNODENAME}]=${WORKERST}
+	WORKERNODESTIP[${WORKERNODENAME}]=${WORKERNODESTORAGEIP}
 done
 SSHUSER=$(readInput "hostname" "Enter SSH user name")
 SSHPASS=$(readInput "string" "Enter SSH Password ")

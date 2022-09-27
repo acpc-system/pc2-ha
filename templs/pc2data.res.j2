@@ -12,9 +12,9 @@ resource "pc2data" {
                         }
 			{% endfor %}
                         connection {
-                                host "{{ MASTERNODENAME }}" address {{ MASTERSTORAGE }}:7789;
+                                host "{{ MASTERNODENAME }}" address {{ MASTERSTORAGEIP }}:7789;
 				{%- for line in WORKERNODES %}
-                                host "{{ line.HOSTNAME }}" address {{ line.STORAGE }}:7789;
+                                host "{{ line.HOSTNAME }}" address {{ line.STORAGEIP }}:7789;
 				{% endfor %}
                         }
                 }
