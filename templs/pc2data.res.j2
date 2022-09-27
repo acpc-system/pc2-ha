@@ -4,7 +4,7 @@ resource "pc2data" {
                         meta-disk internal;
 
                         on "{{ MASTERNODENAME }}" {
-                                Inode-id 0;
+                                node-id 0;
                         }
 			{%- for line in WORKERNODES %}
                         on "{{ line.HOSTNAME }}" {
