@@ -5,12 +5,10 @@
 
 [clusteradmin]
 {{ MASTERNODENAME }}
-{{ MASTERSTORAGE }}
 
 [clusternodes]
 {%- for line in WORKERNODES %}
 {{ line.HOSTNAME }}
-{{ line.STORAGE -}}
 {% endfor %}
 
 [all:vars]
