@@ -1,0 +1,20 @@
+---
+# tasks file for roles/initdisk. Task create a partition on /dev/sdb with PV signature. Creates VG, with the created PV.
+# ## Creates a LV with all space available on VG
+- name: Create partition on sdb
+  parted:
+          device: /dev/sdb
+          number: 1
+          part_end: "100%"
+          state: present
+          flags: [ lvm ]
+
+- name: Create the Volume Group
+  lvg:
+          vg: pc2datavg
+          pvs: /dev/sdb1
+- name: Create the Logical Volume
+  lvol:
+          vg: pc2datavg
+          lv: pc2datalv
+          size: +100%FREE

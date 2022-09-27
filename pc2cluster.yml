@@ -1,0 +1,43 @@
+############################ playbook to setup pc2 active/passive cluster#########################################
+#       The cluster components
+#                       1- 1X cluster master
+#                       2- nX cluster slaves
+#                                     Written by : Ahmed M. Elsayed: ahmed.elsayed@acmacpc.org
+#                                     --------------------------------------------------------                  #
+#           #################   ################
+#          #                   #              #
+#         #                   #              #
+#        #                   #              #
+#       #                   #              #
+#      #                   #              #
+#     #################   ################
+#       In script configure-system, choose any ips and any hostname.
+#       Setup, Configuration from :
+#       MySQL, DRBD, and pacemaker
+#       https://wiki.myhypervisor.ca/books/linux/page/drbd-pacemaker-corosync-mysql-cluster-centos7
+#       https://houseofbrick.com/blog/active-passive-cluster-for-near-ha-using-pacemaker-drbd-corosync-and-mysql/
+#       https://clusterlabs.org/pacemaker/doc/deprecated/en-US/Pacemaker/2.0/html-single/Clusters_from_Scratch/index.html
+#       https://clusterlabs.org/pacemaker/doc/2.1/Pacemaker_Explained/html/advanced-options.html
+#       http://www.linux-ha.org/doc/dev-guides/ra-dev-guide.html
+#       #######################################################################################################
+
+
+- name: Install and configure PC2 active/passive cluster
+  hosts: all
+  collections:
+          - community.general
+  become: yes
+  gather_facts: no
+  roles:
+          - roles/init-env
+          - roles/initdisk
+          - roles/config_drbd
+            #- roles/init_env
+            #- roles/initial
+            #- roles/kube-dependencies
+            #- role: roles/kube-dependencies-adm
+            #when: inventory_hostname in groups['clusteradmin']
+            #- role: roles/configmaster
+            #when: inventory_hostname in groups['clusteradmin']
+            #- role: roles/configworker
+

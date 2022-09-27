@@ -1,0 +1,42 @@
+---
+# tasks file for roles/config_drbd. The task configure DRBD on all hosts (Master, Slaves)
+#- name: Test role
+#shell: mkdir /temp/test > test_created
+#args:
+#creates: test_created_temp
+
+- name: Configure drbd global_common
+  ansible.builtin.lineinfile:
+          path: /etc/drbd.d/global_common.conf
+          #regexp: 'net {'
+          insertafter: "net {"
+          line: "\t\t\tprotocol C;"
+
+
+- name: Copy pc2data resource file
+  ansible.builtin.copy:
+          src: ../../../files/pc2data.res
+          dest: /etc/drbd.d
+          mode: '0644'
+
+- name: Create DRBD metad-device  2>/dev/null > create-md.txt ||  [[ ${?} -ne 0 ]] && rm create-md.txt
+  shell: drbdadm create-md pc2data 
+  args:
+          creates: create-md.txt
+
+- name: Brings resource up 2>/dev/null > resource-up ||  [[ ${?} -ne 0 ]] && rm resource-up
+  shell: drbdadm up pc2data  
+  args:
+          creates: resource-up
+
+- name: Make node primary
+  shell: drbdadm primary --force pc2data 2>/dev/null > make-primary ||  [[ ${?} -ne 0 ]] && rm make-primary
+  args:
+          creates: make-primary
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Format the partition
+  filesystem:
+          fstype: xfs
+          dev: /dev/drbd1
+  when: inventory_hostname in groups['clusteradmin']

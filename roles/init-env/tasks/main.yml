@@ -1,0 +1,28 @@
+---
+# tasks file for roles/init-env. Install all needed software, and create the mount point to use to store PC2 profiles
+- name: Adding DRBD repo
+  ansible.builtin.apt_repository:
+          repo: ppa:linbit/linbit-drbd9-stack
+          update_cache: yes
+          state: present
+
+- name: Install required packages
+  ansible.builtin.package:
+          name: 
+           - unzip 
+           - drbd-utils
+           - drbd-dkms 
+           - default-jre 
+           - pacemaker 
+           - corosync 
+           - pcs 
+           - wget
+          state: present
+
+- name: Create mount point
+  ansible.builtin.file:
+          path: /pc2data
+          state: directory
+          mode: '0777'
+              
+
