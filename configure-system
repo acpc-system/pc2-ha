@@ -182,6 +182,7 @@ EOT
 	echo "Downloading PC2 resource agent from ${PC2RESOURCEAGENT}"
 	wget -q --show-progress  -P files/ ${PC2RESOURCEAGENT}
 	echo "resourceagent=${PC2RESOURCEFILENAME}" >> ${TMPINVFILE}
+	echo "clusterpassword=${CLUSERPASS}" >> ${TMPINVFILE}
 	echo "The inventory file has been written to ${TMPINVFILE}"
 	echo "The pc2data resource file has been written to ${TMPRESFILE}"
 	echo "!! WARNING: Do not forget to download resource agent file ${PC2RESOURCEAGENT} and store it in directory files !!"
@@ -289,6 +290,7 @@ SSHUSER=$(readInput "hostname" "Enter SSH user name")
 SSHPASS=$(readInput "string" "Enter SSH Password ")
 BECOMEPASS=$(readInput "string" "Enter become Password")
 MDNSIF=$(readInput "hostname" "Enter become Password")
+CLUSERPASS=$(readInput "string" "Enter HACluster password")
 saveValues
 exit 0
 

@@ -1,11 +1,14 @@
 pc2master
 192.168.1.5
 drbdm
+192.168.3.5
 1
 pc2slave
 192.168.1.6
 drbds
+192.168.3.6
 administrator
-sshpass
-sudopass
+baba123
+baba123
 enp0s3
+koko
