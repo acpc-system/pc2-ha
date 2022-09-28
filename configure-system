@@ -191,6 +191,7 @@ EOT
 	echo "resourceagent=${PC2RESOURCEFILENAME}" >> ${TMPINVFILE}
 	echo "clusterpassword=${CLUSERPASS}" >> ${TMPINVFILE}
 	echo "clustermembers=${CLUSTERMEMBERS}" >> ${TMPINVFILE}
+	echo "clustervip=${VIP}" >> ${TMPINVFILE}
 	echo "The inventory file has been written to ${TMPINVFILE}"
 	echo "The pc2data resource file has been written to ${TMPRESFILE}"
 	echo "!! WARNING: Do not forget to download resource agent file ${PC2RESOURCEAGENT} and store it in directory files !!"
@@ -299,6 +300,7 @@ SSHPASS=$(readInput "string" "Enter SSH Password ")
 BECOMEPASS=$(readInput "string" "Enter become Password")
 MDNSIF=$(readInput "hostname" "Enter become Password")
 CLUSERPASS=$(readInput "string" "Enter HACluster password")
+VIP=$(readInput "ipv4" "Enter floating IP address")
 saveValues
 exit 0
 
