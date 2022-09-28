@@ -25,7 +25,7 @@ SSHUSER=""
 SSHPASS=""
 BECOMEPASS=""
 MDNSIF=""
-
+CLUSTERMEMBERS=""
 function checkPackages {
 	ERR=0
 	for PACKAGE in ${!NEEDEDPACKAGES[@]}
@@ -130,7 +130,7 @@ BECOMEPASS: ${BECOMEPASS}
 MDNSIF: ${MDNSIF}
 WORKERNODES:
 EOT
-
+CLUSTERMEMBERS=${MASTERNODEHOSTNAME}
 cat <<EOT >> ${DATARESFILE}
 MASTERNODENAME: ${MASTERNODEHOSTNAME}
 MASTERSTORAGE: ${MASTERSTORAGE}
@@ -140,6 +140,7 @@ EOT
 	CO=1
 	for k in ${!WORKERSNODES[@]}
 	do
+	 CLUSTERMEMBERS="${CLUSTERMEMBERS} ${k}"
          echo " - HOSTNAME: ${k}" >> ${DATAFILE}
          echo "   IP: ${WORKERSNODES[$k]}" >> ${DATAFILE}
 	 echo "   STORAGE: ${WORKERSTORAGE[$k]}" >> ${DATAFILE}
@@ -173,16 +174,23 @@ EOT
 	then
 		rm ${DATARESFILE}
 	fi
-	echo "Downloading PC2 package from ${PC2PACKAGE}"
-##Uncomment the next line in producation
-	wget -q --show-progress  -P files/ "${PC2PACKAGE}"
+
 	PC2FILENAME=$(basename "${PC2PACKAGE}")
+	if [ ! -f files/${PC2FILENAME} ]
+	then
+		echo "Downloading PC2 package from ${PC2PACKAGE}"
+		wget -q --show-progress  -P files/ "${PC2PACKAGE}"
+	fi
 	echo "pc2file=${PC2FILENAME}" >> ${TMPINVFILE}
 	PC2RESOURCEFILENAME=$(basename "${PC2RESOURCEAGENT}")
-	echo "Downloading PC2 resource agent from ${PC2RESOURCEAGENT}"
-	wget -q --show-progress  -P files/ ${PC2RESOURCEAGENT}
+	if [ ! -f files/${PC2RESOURCEFILENAME} ]
+	then
+		echo "Downloading PC2 resource agent from ${PC2RESOURCEAGENT}"
+		wget -q --show-progress  -P files/ ${PC2RESOURCEAGENT}
+	fi
 	echo "resourceagent=${PC2RESOURCEFILENAME}" >> ${TMPINVFILE}
 	echo "clusterpassword=${CLUSERPASS}" >> ${TMPINVFILE}
+	echo "clustermembers=${CLUSTERMEMBERS}" >> ${TMPINVFILE}
 	echo "The inventory file has been written to ${TMPINVFILE}"
 	echo "The pc2data resource file has been written to ${TMPRESFILE}"
 	echo "!! WARNING: Do not forget to download resource agent file ${PC2RESOURCEAGENT} and store it in directory files !!"
