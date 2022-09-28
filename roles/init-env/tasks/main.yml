@@ -1,5 +1,5 @@
 ---
-# tasks file for roles/init-env. Install all needed software, and create the mount point to use to store PC2 profiles
+# tasks file for roles/init-env. Install all needed software, and create the mount point to use to store PC2 profiles. Also transfer all necessary files needed such as PC2 package, and the PC2 resource agent
 - name: Adding DRBD repo
   ansible.builtin.apt_repository:
           repo: ppa:linbit/linbit-drbd9-stack
@@ -25,4 +25,19 @@
           state: directory
           mode: '0777'
               
+- name: Transfer PC2 agent file
+  copy:
+          src: "files/{{ resourceagent }}"
+          dest: /usr/lib/ocf/resource.d/heartbeat/
+          mode: '0755'
 
+- name: Transfer and unzip PC2 archive
+  ansible.builtin.unarchive:
+          src: "files/{{ pc2file }}"
+          dest: /usr/local
+
+- name: Create a softlink to PC2 installation directory
+  ansible.builtin.file:
+          src: /usr/local/pc2-9.8build
+          dest: /usr/local/pc2
+          state: link
