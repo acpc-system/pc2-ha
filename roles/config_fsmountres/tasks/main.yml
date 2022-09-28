@@ -1,0 +1,52 @@
+---
+# tasks file for roles/config_fsmountres, creates a file system mount resource to the drbd device, and configure the colocation and order of execution
+- name: Get CIB configuration to a file
+  shell: pcs cluster cib /tmp/fs_cfg && touch fs-config.txt
+  args:
+          creates: fs-config.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Create the FS raw service
+  shell: pcs -f /tmp/fs_cfg resource create pc2dataFS Filesystem device="/dev/drbd1" directory="/pc2data" fstype="xfs" && touch fs-raw-svc.txt
+  args:
+          creates: fs-raw-svc.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Configure colocation with drbd and FS
+  shell: pcs -f /tmp/fs_cfg constraint colocation add pc2dataFS with pc2dataraw-clone INFINITY with-rsc-role=Master && touch col-drbd-fs.txt
+  args:
+          creates: col-drbd-fs.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Configure order between drbd and FS
+  shell: pcs -f /tmp/fs_cfg constraint order promote pc2dataraw-clone then start pc2dataFS && touch order-drbd-fs.txt
+  args:
+          creates: order-drbd-fs.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Configure colocation between PC2Service, and FS
+  shell: pcs -f /tmp/fs_cfg constraint colocation add PC2Service with pc2dataFS INFINITY && touch col-pc2-fs.txt
+  args:
+          creates: col-pc2-fs.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Configure order between PC2 and FS
+  shell: pcs -f /tmp/fs_cfg constraint order pc2dataFS then PC2Service && touch order-pc2-fs.txt
+  args:
+          creates: order-pc2-fs.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Commit changes from fs_cfg to CIB
+  shell: pcs cluster cib-push /tmp/fs_cfg --config && touch commit_fs.txt
+  args:
+          creates: commit_fs.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Remove the fs config file
+  ansible.builtin.file:
+          path: /tmp/fs_cfg
+          state: absent
+  when: inventory_hostname in groups['clusteradmin']
+
+
+

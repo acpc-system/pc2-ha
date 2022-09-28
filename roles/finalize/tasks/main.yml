@@ -1,0 +1,11 @@
+---
+# tasks file for roles/finalize, add here any task to execute after finishing setup, and configuring the cluster
+- name: Change standby state for all nodes
+  shell: crm_standby -v off && touch disable-standby.txt
+  args:
+          creates: disable-standby.txt
+
+- name: Reboot all nodes
+  ansible.builtin.reboot:
+          msg: "Sorry, rebooting"
+          post_reboot_delay: 60m

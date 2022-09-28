@@ -1,0 +1,70 @@
+---
+# tasks file for roles/config_cluster. The role prepare the pacemaker cluster environment, create the cluster, nodes
+#
+- name: Enable cluster services
+  ansible.builtin.systemd:
+          name: "{{ item }}"
+          enabled: yes
+  loop:
+          - pacemaker
+          - corosync
+          - pcsd 
+
+- name: set hacluster user's password
+  ansible.builtin.user:
+          name: hacluster
+          password: "{{ clusterpassword | password_hash('sha512') }}"
+
+- name: Start PCSD
+  ansible.builtin.systemd:
+          name: pcsd
+          state: started
+
+- name: Authenticate cluster members
+  #shell: pcs host auth {{ clustermembers }} -u hacluster -p {{ clusterpassword }} 2>/dev/null > cluster-auth.txt ||  [[ ${?} -ne 0 ]] && rm cluster-auth.txt
+  #args:
+  #creates: cluster-auth.txt
+  #when: inventory_hostname in groups['clusteradmin']
+  shell: pcs host auth {{ clustermembers }} -u hacluster -p {{ clusterpassword }} && touch cluster-auth.txt
+  args:
+          creates: cluster-auth.txt
+  register: out
+  when: inventory_hostname in groups['clusteradmin']
+  #- debug: var=out.stdout_lines
+
+
+  ### Thanks to https://bootpanic.com/pcs-creating-cluster-fails-because-of-unknown-hosts/ for the followin task :-)
+- name: Destroy all clusters (Somecases need this)
+  shell: pcs cluster destroy && touch cluster_destroy.txt
+  args:
+          creates: cluster_destroy.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+
+- name: Create the cluster
+  #shell: pcs cluster setup pc2cluster {{ clustermembers }} --force 2>/dev/null > cluster-create.txt ||  [[ ${?} -ne 0 ]] && rm cluster-create.txt
+  shell: pcs cluster setup pc2cluster {{ clustermembers }} --force && touch cluster-create.txt
+  args:
+          creates: cluster-create.txt
+  when: inventory_hostname in groups['clusteradmin']
+  notify:
+          - Restart pacemaker
+
+- name: Disable stonith
+  shell: pcs property set stonith-enabled=FALSE && touch disable-stonith.txt
+  args:
+          creates: disable-stonith.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Start the cluster
+  shell: pcs cluster start && touch start-cluster.txt
+  args:
+          creates: start-cluster.txt
+  notify:
+          - Restart corosync
+
+- name: Validate cluster configuration
+  shell: crm_verify -L -V && touch validate-cluster.txt
+  args:
+          creates: validate-cluster.txt
+  when: inventory_hostname in groups['clusteradmin']

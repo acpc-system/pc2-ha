@@ -1,0 +1,25 @@
+---
+# tasks file for roles/config_pc2res, creates the PC2 service resource using PC2 resource agent downloaded
+- name: Create PC2 resource
+  shell: pcs resource create PC2Service ocf:heartbeat:PC2 extraargs="--nogui --login s1 --contestpassword contest" user="pc2" pidfile="/var/run/pc2.pid" workdir="/pc2data" conffile="/usr/local/pc2/pc2v9.ini" op monitor  OCF_CHECK_LEVEL="0" timeout="20s" interval="10s" && touch create-pc2.txt
+  args:
+          creates: create-pc2.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: set resource timeout
+  shell: pcs resource op defaults timeout=240s && touch set-timeout.txt
+  args:
+          creates: set-timeout.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Configure colocation for PC2 resource and VIP resource
+  shell: pcs constraint colocation add PC2Service with ClusterVIP INFINITY && touch colocation-pc2-ip.txt
+  args:
+          creates: colocation-pc2-ip.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Configure order of start between PC2 and VIP resource
+  shell: pcs constraint order ClusterVIP then PC2Service && touch order-pc2-ip.txt
+  args:
+          creates: order-pc2-ip.txt
+  when: inventory_hostname in groups['clusteradmin']

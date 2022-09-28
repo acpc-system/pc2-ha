@@ -1,0 +1,31 @@
+---
+# tasks file for roles/config_drbdres, configures the DRBR resource to be managed by pacemaker exclusively to one node
+- name: Get CIB config to file
+  shell: pcs cluster cib /tmp/drbd_cfg && touch drbd-get-cfg.txt
+  args:
+          creates: drbd-get-cfg.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Create a raw service
+  shell: pcs -f /tmp/drbd_cfg resource create pc2dataraw ocf:linbit:drbd  drbd_resource=pc2data op monitor interval=60s && touch create-raw-svc.txt
+  args:
+          creates: create-raw-svc.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Create a master service
+  shell: pcs -f /tmp/drbd_cfg resource promotable pc2dataraw promoted-max=1 promoted-node-max=1 clone-max=2 clone-node-max=1 notify=true && touch create-master-svc.txt
+  args:
+          creates: create-master-svc.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Commit changes from drbd_cfg to CIB
+  shell: pcs cluster cib-push /tmp/drbd_cfg --config && touch commit_drbd.txt
+  args:
+          creates: commit_drbd.txt
+  when: inventory_hostname in groups['clusteradmin']
+
+- name: Remove the drbd config file
+  ansible.builtin.file:
+          path: /tmp/drbd_cfg
+          state: absent
+  when: inventory_hostname in groups['clusteradmin']

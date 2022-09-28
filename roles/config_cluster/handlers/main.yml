@@ -1,0 +1,16 @@
+---
+# handlers file for roles/config_cluster, restart pcsd, pacemaker, and corosync
+- name: Restart pacemaker
+  ansible.builtin.service:
+          name: pacemaker
+          state: restarted
+
+- name: Restart corosync
+  ansible.builtin.service:
+          name: corosync
+          state: restarted
+
+- name: Restart PCSd
+  ansible.builtin.service:
+          name: pcsd
+          state: restarted
