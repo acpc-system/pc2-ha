@@ -1,4 +1,4 @@
-# Active/Passive cluster for PC2 server ansibple playbook 
+# Active/Passive cluster for PC2 server ansible playbook 
 An ansible playbook to setup a full Active/Passive cluster with pacemaker and DRBD without any perior knowledge. 
 
 # Requirements:
