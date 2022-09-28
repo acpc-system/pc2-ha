@@ -12,7 +12,7 @@
 ##			6: Can not find id_rsa.pub
 ############################################################Change the following URLS 
 PC2PACKAGE='https://github.com/pc2ccs/nightly-builds/releases/download/v9.8build-6345/pc2-9.8build-6345.develop.zip'
-PC2RESOURCEAGENT='https://github.com/acpc-system/pc2-ha/blob/main/PC2'
+PC2RESOURCEAGENT='https://raw.githubusercontent.com/acpc-system/pc2-ha/main/PC2'
 #######################################################################################
 
 declare -A NEEDEDPACKAGES
