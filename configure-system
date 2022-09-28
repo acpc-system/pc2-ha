@@ -175,11 +175,12 @@ EOT
 	fi
 	echo "Downloading PC2 package from ${PC2PACKAGE}"
 ##Uncomment the next line in producation
-	###wget -q --show-progress  -P files/ "${PC2PACKAGE}"
+	wget -q --show-progress  -P files/ "${PC2PACKAGE}"
 	PC2FILENAME=$(basename "${PC2PACKAGE}")
 	echo "pc2file=${PC2FILENAME}" >> ${TMPINVFILE}
 	PC2RESOURCEFILENAME=$(basename "${PC2RESOURCEAGENT}")
-	#wget ${PC2RESOURCEAGENT}
+	echo "Downloading PC2 resource agent from ${PC2RESOURCEAGENT}"
+	wget -q --show-progress  -P files/ ${PC2RESOURCEAGENT}
 	echo "resourceagent=${PC2RESOURCEFILENAME}" >> ${TMPINVFILE}
 	echo "The inventory file has been written to ${TMPINVFILE}"
 	echo "The pc2data resource file has been written to ${TMPRESFILE}"
@@ -188,6 +189,7 @@ EOT
 	echo -e "\t\t1- Copy ${TMPINVFILE} to hosts file : cp ${TMPINVFILE} ./hosts "
 	echo -e "\t\t2- Copy ${TMPRESFILE} to directory files : cp ${TMPRESFILE} ./files/pc2data.res "
 	echo -e "\t\t\tNote: The file name must be pc2data.res"
+	echo -e "\t\t3- Stores a copy of PC2 resource agent in directory \"files\""
 }
 
 echo "Pacemaker Cluster manager setup parameters:"
