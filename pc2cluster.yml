@@ -32,6 +32,12 @@
           - roles/init-env
           - roles/initdisk
           - roles/config_drbd
+          - roles/config_cluster
+          - roles/config_ipres
+          - roles/config_pc2res
+          - roles/config_drbdres
+          - roles/config_fsmountres
+          - roles/finalize
             #- roles/init_env
             #- roles/initial
             #- roles/kube-dependencies
