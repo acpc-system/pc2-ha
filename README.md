@@ -50,3 +50,7 @@ Then, repeate the worker nodehostname, and IP for your desired number of worker 
 
 # Example
 View the file "testdata" as an example
+
+# TODO
+ Change the playbook, and configure-system to make the DRBD partition name dynamically not hard coded.
+ Change the playbook, and configure-system to enable for multiple DRBD devices.
