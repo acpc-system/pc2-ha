@@ -19,13 +19,13 @@
           dest: /etc/drbd.d
           mode: '0644'
 
-- name: Create DRBD metad-device  2>/dev/null > create-md.txt ||  [[ ${?} -ne 0 ]] && rm create-md.txt
-  shell: drbdadm create-md pc2data 
+- name: Create DRBD metad-device  
+  shell: drbdadm create-md pc2data 2>/dev/null > create-md.txt ||  [[ ${?} -ne 0 ]] && rm create-md.txt
   args:
           creates: create-md.txt
 
-- name: Brings resource up 2>/dev/null > resource-up ||  [[ ${?} -ne 0 ]] && rm resource-up
-  shell: drbdadm up pc2data  
+- name: Brings resource up 
+  shell: drbdadm up pc2data 2>/dev/null > resource-up ||  [[ ${?} -ne 0 ]] && rm resource-up
   args:
           creates: resource-up
 
