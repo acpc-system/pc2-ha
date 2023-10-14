@@ -11,7 +11,8 @@
 ##			5: Can not generate the temp inventory file (j2 step)
 ##			6: Can not find id_rsa.pub
 ############################################################Change the following URLS 
-PC2PACKAGE='https://github.com/pc2ccs/nightly-builds/releases/download/v9.8build-6345/pc2-9.8build-6345.develop.zip'
+#PC2PACKAGE='https://github.com/pc2ccs/nightly-builds/releases/download/v9.8build-6345/pc2-9.8build-6345.develop.zip'
+PC2PACKAGE='https://github.com/pc2ccs/nightly-builds/releases/download/v9.9build-6720/pc2-9.9build-6720.develop.tar.gz'
 PC2RESOURCEAGENT='https://raw.githubusercontent.com/acpc-system/pc2-ha/main/PC2'
 #######################################################################################
 
@@ -52,7 +53,12 @@ function readInput {
 	CONT=1
 	while [ ${CONT} -eq 1 ]
 	do
-		read -p "${MSG} : " USERINPUT
+		if [ ${TYPE} == "password" ]
+		then
+			read -s -p "${MSG} : " USERINPUT
+		else
+			read -p "${MSG} : " USERINPUT
+		fi
 		case ${TYPE} in
 			"hostname")
 				## The hostname must be single word, without space,.,any special character other _ 
@@ -66,6 +72,9 @@ function readInput {
 				
 				;;
 			"string")
+				CONT=0
+				;;
+			"password")
 				CONT=0
 				;;
 			"integer")
@@ -125,8 +134,8 @@ MASTERNODENAME: ${MASTERNODEHOSTNAME}
 MASTERNODEIP: ${MASTERNODEIP}
 MASTERSTORAGE: ${MASTERSTORAGE}
 SSHUSER: ${SSHUSER}
-SSHPASS: ${SSHPASS}
-BECOMEPASS: ${BECOMEPASS}
+SSHPASS: ${SSHPASS} 
+BECOMEPASS: ${BECOMEPASS} 
 MDNSIF: ${MDNSIF}
 WORKERNODES:
 EOT
@@ -296,10 +305,10 @@ do
 	WORKERNODESTIP[${WORKERNODENAME}]=${WORKERNODESTORAGEIP}
 done
 SSHUSER=$(readInput "hostname" "Enter SSH user name")
-SSHPASS=$(readInput "string" "Enter SSH Password ")
-BECOMEPASS=$(readInput "string" "Enter become Password")
-MDNSIF=$(readInput "hostname" "Enter become Password")
-CLUSERPASS=$(readInput "string" "Enter HACluster password")
+SSHPASS=$(readInput "password" "Enter SSH Password ")
+BECOMEPASS=$(readInput "password" "Enter become Password")
+MDNSIF=$(readInput "hostname" "Enter MDNS name")
+CLUSERPASS=$(readInput "password" "Enter HACluster password")
 VIP=$(readInput "ipv4" "Enter floating IP address")
 saveValues
 exit 0
