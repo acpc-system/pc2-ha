@@ -19,6 +19,14 @@
            - wget
           state: present
 
+##Task executed only for ubuntu >= 22
+- name: Install resource agents package 
+  ansible.builtin.package:
+          name:
+                  - resource-agents
+          state: present
+  when: "{{ ansible_distribution_major_version }} >= 22"
+
 - name: Create mount point
   ansible.builtin.file:
           path: /pc2data
@@ -38,6 +46,6 @@
 
 - name: Create a softlink to PC2 installation directory
   ansible.builtin.file:
-          src: /usr/local/pc2-9.8build
+          src: /usr/local/pc2-9.9build
           dest: /usr/local/pc2
           state: link
