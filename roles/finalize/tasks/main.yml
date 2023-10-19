@@ -8,4 +8,3 @@
 - name: Reboot all nodes
   ansible.builtin.reboot:
           msg: "Sorry, rebooting"
-          post_reboot_delay: 60m
