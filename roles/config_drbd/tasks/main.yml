@@ -20,19 +20,19 @@
           mode: '0644'
 
 - name: Create DRBD metad-device  
-  shell: drbdadm create-md pc2data 2>/dev/null > create-md.txt ||  [[ ${?} -ne 0 ]] && rm create-md.txt
+  shell: drbdadm create-md pc2data && touch create-md.txt
   args:
           creates: create-md.txt
 
 - name: Brings resource up 
-  shell: drbdadm up pc2data 2>/dev/null > resource-up ||  [[ ${?} -ne 0 ]] && rm resource-up
+  shell: drbdadm up pc2data && touch resource-up.txt
   args:
-          creates: resource-up
+          creates: resource-up.txt
 
 - name: Make node primary
-  shell: drbdadm primary --force pc2data 2>/dev/null > make-primary ||  [[ ${?} -ne 0 ]] && rm make-primary
+  shell: drbdadm primary --force pc2data && touch make-primary.txt
   args:
-          creates: make-primary
+          creates: make-primary.txt
   when: inventory_hostname in groups['clusteradmin']
 
 - name: Format the partition
