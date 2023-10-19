@@ -29,7 +29,7 @@ configure-system is a shell script asks for parameters values, and generate a fi
   * ./configure-system
      The script will print the inventory file name, copy it in current direcoty with name hosts. For example if the inventory file was /tmp/compiler
   * cp /tmp/compiler hosts
-  * ansible-playbook pc2cluster.yml
+  * ansible-playbook pc2cluster.yml --ask-vault-pass
 It may takes time depends on your internet connection and number of cluster nodes
 
 # Automatic inventory file generation
