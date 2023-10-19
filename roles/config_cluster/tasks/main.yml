@@ -50,8 +50,14 @@
   notify:
           - Restart pacemaker
 
+- name: Restart pacemaker task
+  ansible.builtin.service:
+          name: pacemaker
+          state: restarted
+
 - name: Disable stonith
-  shell: pcs property set stonith-enabled=FALSE && touch disable-stonith.txt
+  become: true
+  shell: pcs property set stonith-enabled=false && touch disable-stonith.txt
   args:
           creates: disable-stonith.txt
   when: inventory_hostname in groups['clusteradmin']
