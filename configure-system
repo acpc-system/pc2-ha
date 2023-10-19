@@ -201,6 +201,8 @@ EOT
 	echo "clusterpassword=${CLUSERPASS}" >> ${TMPINVFILE}
 	echo "clustermembers=${CLUSTERMEMBERS}" >> ${TMPINVFILE}
 	echo "clustervip=${VIP}" >> ${TMPINVFILE}
+	### Here, encrypt TMPINVFILE 
+	ansible-vault encrypt ${TMPINVFILE}
 	echo "The inventory file has been written to ${TMPINVFILE}"
 	echo "The pc2data resource file has been written to ${TMPRESFILE}"
 	echo "!! WARNING: Do not forget to download resource agent file ${PC2RESOURCEAGENT} and store it in directory files !!"
@@ -209,6 +211,7 @@ EOT
 	echo -e "\t\t2- Copy ${TMPRESFILE} to directory files : cp ${TMPRESFILE} ./files/pc2data.res "
 	echo -e "\t\t\tNote: The file name must be pc2data.res"
 	echo -e "\t\t3- Stores a copy of PC2 resource agent in directory \"files\""
+	echo -e "\t\t4- Do not forget to add --ask-vault-pass to your ansible-playbook"
 }
 
 echo "Pacemaker Cluster manager setup parameters:"
