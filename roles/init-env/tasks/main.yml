@@ -17,6 +17,7 @@
            - corosync 
            - pcs 
            - wget
+           - fence-agents-extra
           state: present
 
 ##Task executed only for ubuntu >= 22
