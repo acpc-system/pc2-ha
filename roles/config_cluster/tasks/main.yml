@@ -77,4 +77,4 @@
 
 - name: Sleep for a while
   ansible.builtin.pause:
-    seconds: 30
+    seconds: 60
