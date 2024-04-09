@@ -4,17 +4,11 @@ resource "pc2data" {
                         meta-disk internal;
 
                         on "{{ MASTERNODENAME }}" {
-                                node-id 0;
+				address {{ MASTERSTORAGEIP }}:7789;
                         }
 			{%- for line in WORKERNODES %}
                         on "{{ line.HOSTNAME }}" {
-                                node-id {{ line.NODECOUNTER }};
+				address {{ line.STORAGEIP }}:7789;
                         }
 			{% endfor %}
-                        connection {
-                                host "{{ MASTERNODENAME }}" address {{ MASTERSTORAGEIP }}:7789;
-				{%- for line in WORKERNODES %}
-                                host "{{ line.HOSTNAME }}" address {{ line.STORAGEIP }}:7789;
-				{% endfor %}
-                        }
                 }
