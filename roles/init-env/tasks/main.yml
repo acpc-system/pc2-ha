@@ -17,6 +17,7 @@
            - corosync 
            - pcs 
            - wget
+           - resource-agents
            - fence-agents-extra
           state: present
 
